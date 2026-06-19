@@ -4,6 +4,7 @@ import (
 	"time"
 	"workflow-engine/internal/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -28,4 +29,25 @@ func (r *WorkflowRepository) CreateWorkflow(workflowName string) (string, error)
 	}
 
 	return res.Statement.Dest.(*models.WorkflowDefinition).ID, nil
+}
+
+func (r *WorkflowRepository) GetWorkflow(workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
+	var workflow models.WorkflowDefinition
+	res := r.DB.First(&workflow, workflowId)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return &workflow, nil
+}
+
+func (r *WorkflowRepository) ListWorkflows() ([]*models.WorkflowDefinition, error) {
+	var workflows []*models.WorkflowDefinition
+
+	res := r.DB.Find(&workflows)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return workflows, nil
 }

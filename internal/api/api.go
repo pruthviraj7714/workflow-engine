@@ -39,6 +39,17 @@ func Start() {
 		authRouter.POST("/login", userHandler.Login)
 	}
 
+	workflowRepository := repository.NewWorkflowRepository(database)
+	workflowService := services.NewWorkflowService(workflowRepository)
+	workflowHandler := handlers.NewWorkflowHandler(workflowService)
+
+	workflowRouter := r.Group("/workflow")
+	{
+		workflowRouter.POST("/create", workflowHandler.CreateWorkflow)
+		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
+		workflowRouter.GET("/", workflowHandler.ListWorkflows)
+	}
+
 	r.Run(":" + cfg.Port)
 
 }

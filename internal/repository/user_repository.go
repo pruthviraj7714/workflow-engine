@@ -5,7 +5,6 @@ import (
 	"workflow-engine/internal/models"
 	"workflow-engine/internal/utils"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +33,6 @@ func (r *UserRepository) RegisterUser(username, password string) (string, error)
 	}
 
 	res = r.DB.Create(&models.User{
-		ID:       uuid.New(),
 		Username: username,
 		Password: hashedPassword,
 	})
