@@ -6,8 +6,12 @@ import (
 )
 
 type User struct {
-	gorm.Model
 	ID       uuid.UUID `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
 	Username string    `json:"username" gorm:"unique"`
 	Password string    `json:"password"`
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	u.ID = uuid.New()
+	return nil
 }

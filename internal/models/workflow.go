@@ -5,7 +5,7 @@ import (
 )
 
 type WorkflowDefinition struct {
-	ID        string    `json:	"id" gorm:"primaryKey;default:gen_random_uuid()"`
+	ID        string    `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 

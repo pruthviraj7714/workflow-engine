@@ -6,6 +6,7 @@ import (
 	"workflow-engine/internal/config"
 	"workflow-engine/internal/db"
 	"workflow-engine/internal/handlers"
+	"workflow-engine/internal/middlewares"
 	"workflow-engine/internal/repository"
 	"workflow-engine/internal/services"
 
@@ -45,9 +46,21 @@ func Start() {
 
 	workflowRouter := r.Group("/workflow")
 	{
+		workflowRouter.Use(middlewares.AuthMiddleware())
 		workflowRouter.POST("/create", workflowHandler.CreateWorkflow)
 		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
 		workflowRouter.GET("/", workflowHandler.ListWorkflows)
+	}
+
+	workflowTaskRepository := repository.NewWorkflowTasksRepository(database)
+	workflowTaskService := services.NewWorkflowTaskService(workflowTaskRepository)
+	workflowTaskHandler := handlers.NewWorkflowTaskHandler(workflowTaskService)
+
+	workflowTaskRouter := r.Group("/workflow-task")
+	{
+		workflowTaskRouter.Use(middlewares.AuthMiddleware())
+		workflowTaskRouter.POST("/create", workflowTaskHandler.CreateTask)
+		workflowTaskRouter.GET("/:workflowId", workflowTaskHandler.GetTasksByWorkflow)
 	}
 
 	r.Run(":" + cfg.Port)
