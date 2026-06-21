@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"time"
 	"workflow-engine/internal/models"
 
@@ -18,22 +19,73 @@ func NewWorkflowRepository(db *gorm.DB) *WorkflowRepository {
 	}
 }
 
-func (r *WorkflowRepository) CreateWorkflow(workflowName string) (string, error) {
-	res := r.DB.Create(&models.WorkflowDefinition{
-		Name:      workflowName,
-		CreatedAt: time.Now(),
+func CreateTask(db *gorm.DB, workflowId, taskName string, taskOrder int) (bool, error) {
+	res := db.Create(&models.WorkflowTask{
+		WorkflowID: workflowId,
+		TaskOrder:  taskOrder,
+		TaskName:   taskName,
 	})
 
 	if res.Error != nil {
-		return "", res.Error
+		return false, res.Error
 	}
 
-	return res.Statement.Dest.(*models.WorkflowDefinition).ID, nil
+	return true, nil
+}
+
+func GetTasksByWorkflow(db *gorm.DB, workflowId string) (*[]models.WorkflowTask, error) {
+	var workflowTasks *[]models.WorkflowTask
+
+	err := db.Find(&workflowTasks, "workflow_id = ?", workflowId).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return workflowTasks, nil
+}
+
+func (r *WorkflowRepository) CreateWorkflow(workflowName string, tasks []string) (string, error) {
+	if len(tasks) == 0 {
+		return "", errors.New("No Tasks found for the workflow")
+	}
+
+	var workflow models.WorkflowDefinition
+
+	err := r.DB.Transaction(func(tx *gorm.DB) error {
+
+		workflow := models.WorkflowDefinition{
+			Name:      workflowName,
+			CreatedAt: time.Now(),
+		}
+
+		if err := tx.Create(&workflow).Error; err != nil {
+			return err
+		}
+
+		for idx, taskName := range tasks {
+			if err := tx.Create(&models.WorkflowTask{
+				WorkflowID: workflow.ID,
+				TaskOrder:  idx + 1,
+				TaskName:   taskName,
+			}).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return workflow.ID, nil
 }
 
 func (r *WorkflowRepository) GetWorkflow(workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
 	var workflow models.WorkflowDefinition
-	res := r.DB.First(&workflow, workflowId)
+	res := r.DB.Preload("Tasks").First(&workflow, workflowId)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -43,7 +95,7 @@ func (r *WorkflowRepository) GetWorkflow(workflowId uuid.UUID) (*models.Workflow
 func (r *WorkflowRepository) ListWorkflows() ([]*models.WorkflowDefinition, error) {
 	var workflows []*models.WorkflowDefinition
 
-	res := r.DB.Find(&workflows)
+	res := r.DB.Preload("Tasks").Find(&workflows)
 
 	if res.Error != nil {
 		return nil, res.Error

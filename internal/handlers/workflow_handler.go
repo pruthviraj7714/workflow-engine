@@ -20,7 +20,8 @@ func NewWorkflowHandler(workflowService *services.WorkflowService) *WorkflowHand
 func (h *WorkflowHandler) CreateWorkflow(c *gin.Context) {
 
 	var req struct {
-		WorkflowName string `json:"workflowName"`
+		WorkflowName string   `json:"workflowName"`
+		Tasks        []string `json:"tasks"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -28,7 +29,7 @@ func (h *WorkflowHandler) CreateWorkflow(c *gin.Context) {
 		return
 	}
 
-	if workflowId, err := h.WorkflowService.CreateWorkflow(req.WorkflowName); err != nil {
+	if workflowId, err := h.WorkflowService.CreateWorkflow(req.WorkflowName, req.Tasks); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	} else {

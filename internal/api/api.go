@@ -44,23 +44,12 @@ func Start() {
 	workflowService := services.NewWorkflowService(workflowRepository)
 	workflowHandler := handlers.NewWorkflowHandler(workflowService)
 
-	workflowRouter := r.Group("/workflow")
+	workflowRouter := r.Group("/workflows")
 	{
 		workflowRouter.Use(middlewares.AuthMiddleware())
-		workflowRouter.POST("/create", workflowHandler.CreateWorkflow)
-		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
+		workflowRouter.POST("/", workflowHandler.CreateWorkflow)
 		workflowRouter.GET("/", workflowHandler.ListWorkflows)
-	}
-
-	workflowTaskRepository := repository.NewWorkflowTasksRepository(database)
-	workflowTaskService := services.NewWorkflowTaskService(workflowTaskRepository)
-	workflowTaskHandler := handlers.NewWorkflowTaskHandler(workflowTaskService)
-
-	workflowTaskRouter := r.Group("/workflow-task")
-	{
-		workflowTaskRouter.Use(middlewares.AuthMiddleware())
-		workflowTaskRouter.POST("/create", workflowTaskHandler.CreateTask)
-		workflowTaskRouter.GET("/:workflowId", workflowTaskHandler.GetTasksByWorkflow)
+		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
 	}
 
 	r.Run(":" + cfg.Port)

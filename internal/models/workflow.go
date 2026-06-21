@@ -17,5 +17,9 @@ type WorkflowTask struct {
 	WorkflowID string              `json:"workflow_id"`
 	TaskOrder  int                 `json:"task_order"`
 	TaskName   string              `json:"task_name"`
-	Workflow   *WorkflowDefinition `json:"workflow"`
+	Workflow   *WorkflowDefinition `json:"-" gorm:"foreignKey:WorkflowID"`
+}
+
+func (w *WorkflowDefinition) Preload() {
+	w.Tasks = make([]WorkflowTask, 0)
 }

@@ -17,8 +17,8 @@ func NewWorkflowService(workflowRepo *repository.WorkflowRepository) *WorkflowSe
 	}
 }
 
-func (s *WorkflowService) CreateWorkflow(workflowName string) (string, error) {
-	return s.WorkflowRepo.CreateWorkflow(workflowName)
+func (s *WorkflowService) CreateWorkflow(workflowName string, tasks []string) (string, error) {
+	return s.WorkflowRepo.CreateWorkflow(workflowName, tasks)
 }
 
 func (s *WorkflowService) GetWorkflow(workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
