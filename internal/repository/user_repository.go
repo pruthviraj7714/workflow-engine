@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"workflow-engine/internal/models"
 	"workflow-engine/internal/utils"
@@ -18,21 +19,26 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) RegisterUser(username, password string) (string, error) {
+func (r *UserRepository) RegisterUser(ctx context.Context, username, password string) (string, error) {
+	var user models.User
 
-	res := r.DB.Model(&models.User{}).Where("username = ?", username)
+	res := r.DB.WithContext(ctx).Model(&models.User{}).Where("username = ?", username).First(&user)
 
-	if res.RowsAffected > 0 {
-		return "", errors.New("Username Already Exists")
+	if res.Error == nil {
+		return "", errors.New("username already exists")
+	}
+
+	if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return "", res.Error
 	}
 
 	hashedPassword, err := utils.HashPassword(password)
 
 	if err != nil {
-		return "", res.Error
+		return "", err
 	}
 
-	res = r.DB.Create(&models.User{
+	res = r.DB.WithContext(ctx).Create(&models.User{
 		Username: username,
 		Password: hashedPassword,
 	})
@@ -41,14 +47,14 @@ func (r *UserRepository) RegisterUser(username, password string) (string, error)
 		return "", res.Error
 	}
 
-	return r.LoginUser(username, password)
+	return r.LoginUser(ctx, username, password)
 
 }
 
-func (r *UserRepository) LoginUser(username, password string) (string, error) {
+func (r *UserRepository) LoginUser(ctx context.Context, username, password string) (string, error) {
 	var existingUser models.User
 
-	res := r.DB.Where("username = ?", username).First(&existingUser)
+	res := r.DB.WithContext(ctx).Where("username = ?", username).First(&existingUser)
 
 	if res.RowsAffected == 0 {
 		return "", errors.New("User with given username not found")

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"workflow-engine/internal/models"
 	"workflow-engine/internal/repository"
 
@@ -17,14 +18,14 @@ func NewWorkflowService(workflowRepo *repository.WorkflowRepository) *WorkflowSe
 	}
 }
 
-func (s *WorkflowService) CreateWorkflow(workflowName string, tasks []string) (string, error) {
-	return s.WorkflowRepo.CreateWorkflow(workflowName, tasks)
+func (s *WorkflowService) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (string, error) {
+	return s.WorkflowRepo.CreateWorkflow(ctx, workflowName, tasks)
 }
 
-func (s *WorkflowService) GetWorkflow(workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
-	return s.WorkflowRepo.GetWorkflow(workflowId)
+func (s *WorkflowService) GetWorkflow(ctx context.Context, workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
+	return s.WorkflowRepo.GetWorkflow(ctx, workflowId)
 }
 
-func (s *WorkflowService) ListWorkflows() ([]*models.WorkflowDefinition, error) {
-	return s.WorkflowRepo.ListWorkflows()
+func (s *WorkflowService) ListWorkflows(ctx context.Context) ([]*models.WorkflowDefinition, error) {
+	return s.WorkflowRepo.ListWorkflows(ctx)
 }

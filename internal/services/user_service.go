@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"workflow-engine/internal/repository"
 )
 
@@ -14,10 +15,10 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) RegisterUser(username, password string) (string, error) {
-	return s.UserRepo.RegisterUser(username, password)
+func (s *UserService) RegisterUser(ctx context.Context, username, password string) (string, error) {
+	return s.UserRepo.RegisterUser(ctx, username, password)
 }
 
-func (s *UserService) LoginUser(username, password string) (string, error) {
-	return s.UserRepo.LoginUser(username, password)
+func (s *UserService) LoginUser(ctx context.Context, username, password string) (string, error) {
+	return s.UserRepo.LoginUser(ctx, username, password)
 }

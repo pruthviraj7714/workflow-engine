@@ -29,7 +29,7 @@ func (h *WorkflowHandler) CreateWorkflow(c *gin.Context) {
 		return
 	}
 
-	if workflowId, err := h.WorkflowService.CreateWorkflow(req.WorkflowName, req.Tasks); err != nil {
+	if workflowId, err := h.WorkflowService.CreateWorkflow(c.Request.Context(), req.WorkflowName, req.Tasks); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	} else {
@@ -46,7 +46,7 @@ func (h *WorkflowHandler) GetWorkflow(c *gin.Context) {
 		return
 	}
 
-	if workflow, err := h.WorkflowService.GetWorkflow(uuid); err != nil {
+	if workflow, err := h.WorkflowService.GetWorkflow(c.Request.Context(), uuid); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	} else {
@@ -55,7 +55,7 @@ func (h *WorkflowHandler) GetWorkflow(c *gin.Context) {
 }
 
 func (h *WorkflowHandler) ListWorkflows(c *gin.Context) {
-	if workflows, err := h.WorkflowService.ListWorkflows(); err != nil {
+	if workflows, err := h.WorkflowService.ListWorkflows(c.Request.Context()); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	} else {

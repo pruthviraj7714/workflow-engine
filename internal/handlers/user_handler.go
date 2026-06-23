@@ -31,7 +31,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := h.UserService.RegisterUser(req.Username, req.Password)
+	token, err := h.UserService.RegisterUser(c.Request.Context(), req.Username, req.Password)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -61,7 +61,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.UserService.LoginUser(req.Username, req.Password)
+	token, err := h.UserService.LoginUser(c.Request.Context(), req.Username, req.Password)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
