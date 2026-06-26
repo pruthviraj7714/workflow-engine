@@ -20,7 +20,7 @@ func NewWorkflowRepository(db *gorm.DB) *WorkflowRepository {
 	}
 }
 
-func CreateTask(db *gorm.DB, workflowId, taskName string, taskOrder int) (bool, error) {
+func CreateTask(db *gorm.DB, workflowId uuid.UUID, taskName string, taskOrder int) (bool, error) {
 	res := db.Create(&models.WorkflowTask{
 		WorkflowID: workflowId,
 		TaskOrder:  taskOrder,
@@ -46,27 +46,26 @@ func GetTasksByWorkflow(db *gorm.DB, workflowId string) (*[]models.WorkflowTask,
 	return workflowTasks, nil
 }
 
-func (r *WorkflowRepository) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (string, error) {
+func (r *WorkflowRepository) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (uuid.UUID, error) {
 	if len(tasks) == 0 {
-		return "", errors.New("No Tasks found for the workflow")
+		return uuid.Nil, errors.New("No Tasks found for the workflow")
 	}
 
-	var workflow models.WorkflowDefinition
+	var createdWorkflow models.WorkflowDefinition
 
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 
-		workflow := models.WorkflowDefinition{
+		if err := tx.Create(&models.WorkflowDefinition{
+			ID:        uuid.New(),
 			Name:      workflowName,
 			CreatedAt: time.Now(),
-		}
-
-		if err := tx.Create(&workflow).Error; err != nil {
+		}).Scan(&createdWorkflow).Error; err != nil {
 			return err
 		}
 
 		for idx, taskName := range tasks {
 			if err := tx.Create(&models.WorkflowTask{
-				WorkflowID: workflow.ID,
+				WorkflowID: createdWorkflow.ID,
 				TaskOrder:  idx + 1,
 				TaskName:   taskName,
 			}).Error; err != nil {
@@ -78,10 +77,10 @@ func (r *WorkflowRepository) CreateWorkflow(ctx context.Context, workflowName st
 	})
 
 	if err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 
-	return workflow.ID, nil
+	return createdWorkflow.ID, nil
 }
 
 func (r *WorkflowRepository) GetWorkflow(ctx context.Context, workflowId uuid.UUID) (*models.WorkflowDefinition, error) {

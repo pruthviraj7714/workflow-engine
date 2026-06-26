@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"workflow-engine/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -61,4 +62,24 @@ func (h *WorkflowHandler) ListWorkflows(c *gin.Context) {
 	} else {
 		c.JSON(200, workflows)
 	}
+}
+
+func (h *WorkflowHandler) CreateWorkflowExecution(c *gin.Context) {
+	var req struct {
+		WorkflowID string `json:"workflowId"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid Body",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Workflow execution started successfully",
+		"executionId": uuid.New(),
+	})
+
 }

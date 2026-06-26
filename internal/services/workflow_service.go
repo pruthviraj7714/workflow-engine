@@ -18,7 +18,7 @@ func NewWorkflowService(workflowRepo *repository.WorkflowRepository) *WorkflowSe
 	}
 }
 
-func (s *WorkflowService) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (string, error) {
+func (s *WorkflowService) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (uuid.UUID, error) {
 	return s.WorkflowRepo.CreateWorkflow(ctx, workflowName, tasks)
 }
 

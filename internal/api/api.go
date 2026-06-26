@@ -50,6 +50,7 @@ func Start() {
 		workflowRouter.POST("/", workflowHandler.CreateWorkflow)
 		workflowRouter.GET("/", workflowHandler.ListWorkflows)
 		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
+		workflowRouter.POST("/workflow-executions", workflowHandler.CreateWorkflowExecution)
 	}
 
 	r.Run(":" + cfg.Port)
