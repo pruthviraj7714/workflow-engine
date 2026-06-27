@@ -77,9 +77,28 @@ func (h *WorkflowHandler) CreateWorkflowExecution(c *gin.Context) {
 		return
 	}
 
+	workflowId, err := uuid.Parse(req.WorkflowID)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "invalid Workflow ID",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	workflowExecutionId, err := h.WorkflowService.CreateWorkflowExecution(c.Request.Context(), workflowId)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Internal Server Error",
+			"error":   err.Error(),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Workflow execution started successfully",
-		"executionId": uuid.New(),
+		"executionId": workflowExecutionId,
 	})
-
 }

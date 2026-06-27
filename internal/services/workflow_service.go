@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"workflow-engine/internal/models"
 	"workflow-engine/internal/repository"
 
@@ -19,13 +20,21 @@ func NewWorkflowService(workflowRepo *repository.WorkflowRepository) *WorkflowSe
 }
 
 func (s *WorkflowService) CreateWorkflow(ctx context.Context, workflowName string, tasks []string) (uuid.UUID, error) {
-	return s.WorkflowRepo.CreateWorkflow(ctx, workflowName, tasks)
+	if len(tasks) == 0 {
+		return uuid.Nil, errors.New("No Tasks found for the workflow")
+	}
+
+	return s.WorkflowRepo.CreateWorkflowDefinition(ctx, workflowName, tasks)
 }
 
 func (s *WorkflowService) GetWorkflow(ctx context.Context, workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
 	return s.WorkflowRepo.GetWorkflow(ctx, workflowId)
 }
 
-func (s *WorkflowService) ListWorkflows(ctx context.Context) ([]*models.WorkflowDefinition, error) {
+func (s *WorkflowService) ListWorkflows(ctx context.Context) ([]models.WorkflowDefinition, error) {
 	return s.WorkflowRepo.ListWorkflows(ctx)
+}
+
+func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, workflowId uuid.UUID) (uuid.UUID, error) {
+	return s.WorkflowRepo.CreateWorkflowExecution(ctx, workflowId)
 }

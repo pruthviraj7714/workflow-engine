@@ -27,6 +27,6 @@ func LoadConfig() *Config {
 
 	return &Config{
 		Port:  getEnv("PORT", "8080"),
-		DBURL: getEnv("DATABASE_URL", "mongodb://localhost:27017"),
+		DBURL: getEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432"),
 	}
 }
