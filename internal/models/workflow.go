@@ -12,16 +12,16 @@ type WorkflowDefinition struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	Tasks      []WorkflowTask      `json:"tasks" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE"`
-	Executions []WorkflowExecution `json:"executions" gorm:"foreignKey:WorkflowID;constraint:OnDelete:CASCADE"`
+	Tasks      []WorkflowTask      `json:"tasks" gorm:"foreignKey:WorkflowDefinationID;constraint:OnDelete:CASCADE"`
+	Executions []WorkflowExecution `json:"executions" gorm:"foreignKey:WorkflowDefinationID;constraint:OnDelete:CASCADE"`
 }
 
 type WorkflowTask struct {
-	ID         uuid.UUID           `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
-	WorkflowID uuid.UUID           `json:"workflow_id"`
-	TaskOrder  int                 `json:"task_order"`
-	TaskName   string              `json:"task_name"`
-	Workflow   *WorkflowDefinition `json:"-" gorm:"foreignKey:WorkflowID"`
+	ID                   uuid.UUID `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
+	WorkflowDefinationID uuid.UUID `json:"workflow_defination_id"`
+	WorkflowDefination   *WorkflowDefinition
+	TaskOrder            int    `json:"task_order"`
+	TaskName             string `json:"task_name"`
 }
 
 type WorkflowStatus string
@@ -43,26 +43,28 @@ const (
 )
 
 type WorkflowExecution struct {
-	ID                   uuid.UUID           `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
-	WorkflowDefinition   *WorkflowDefinition `json:"-" gorm:"foreignKey:WorkflowID"`
-	WorkflowDefinationID uuid.UUID           `json:"workflow_defination_id"`
-	CurrentTaskOrder     int                 `json:"current_task_order"`
+	ID                   uuid.UUID `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
+	WorkflowDefinationID uuid.UUID
+	WorkflowDefination   *WorkflowDefinition
+	CurrentTaskOrder     int `json:"current_task_order"`
 	Error                string
-	Status               WorkflowStatus `json:"status" gorm:"default:WorkflowPending"`
+	Status               WorkflowStatus `json:"status" gorm:"default:PENDING"`
 	StartedAt            *time.Time     `json:"startedAt"`
 	CompletedAt          *time.Time     `json:"completedAt"`
 
-	TaskExecutions []TaskExecution
+	TaskExecutions []TaskExecution `json:"task_executions" gorm:"foreignKey:WorkflowExecutionID;constraint:OnDelete:CASCADE"`
 }
 
 type TaskExecution struct {
-	ID                  uuid.UUID          `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
-	WorkflowExecutionID uuid.UUID          `json:"-" gorm:"foreignKey:WorkflowExecutionID"`
-	WorkflowExecution   *WorkflowExecution `json:"-"`
-	ErrorMessage        string
-	Status              TaskStatus `json:"status" gorm:"default:TaskPending"`
-	CurrentTaskOrder    int
-	TaskName            string     `json:"task_name"`
-	StartedAt           *time.Time `json:"startedAt"`
-	CompletedAt         *time.Time `json:"completedAt"`
+	ID uuid.UUID `json:"id" gorm:"primaryKey;default:gen_random_uuid()"`
+
+	WorkflowExecutionID uuid.UUID
+	WorkflowExecution   *WorkflowExecution
+
+	ErrorMessage     string
+	Status           TaskStatus `json:"status" gorm:"default:PENDING"`
+	CurrentTaskOrder int
+	TaskName         string     `json:"task_name"`
+	StartedAt        *time.Time `json:"startedAt"`
+	CompletedAt      *time.Time `json:"completedAt"`
 }

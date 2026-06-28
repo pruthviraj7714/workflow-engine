@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"workflow-engine/internal/models"
 
@@ -30,11 +31,13 @@ func (r *WorkflowRepository) CreateWorkflowDefinition(ctx context.Context, workf
 			return err
 		}
 
+		fmt.Print(workflowDefination)
+
 		for idx, taskName := range tasks {
 			if err := tx.Create(&models.WorkflowTask{
-				WorkflowID: workflowDefination.ID,
-				TaskOrder:  idx + 1,
-				TaskName:   taskName,
+				WorkflowDefinationID: workflowDefination.ID,
+				TaskOrder:            idx + 1,
+				TaskName:             taskName,
 			}).Error; err != nil {
 				return err
 			}
