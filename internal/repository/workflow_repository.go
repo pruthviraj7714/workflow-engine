@@ -93,3 +93,24 @@ func (r *WorkflowRepository) CreateWorkflowExecution(ctx context.Context, workfl
 
 	return createdWorkflowExecution.ID, nil
 }
+
+func (r *WorkflowRepository) GetWorkflowExecutionById(workflowExecutionId uuid.UUID) (*models.WorkflowExecution, error) {
+	var workflowExecution models.WorkflowExecution
+
+	res := r.DB.Find(&workflowExecution, workflowExecutionId)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return &workflowExecution, nil
+}
+
+func (r *WorkflowRepository) GetWorkflowDefinitionById(workflowDefinitionId uuid.UUID) (*models.WorkflowDefinition, error) {
+	var workflow models.WorkflowDefinition
+	res := r.DB.Preload("Tasks").First(&workflow, workflowDefinitionId)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return &workflow, nil
+}
