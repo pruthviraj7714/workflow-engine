@@ -2,30 +2,37 @@ package executor
 
 import (
 	"fmt"
-	"workflow-engine/internal/repository"
+	"workflow-engine/internal/models"
 
 	"github.com/google/uuid"
 )
 
 type WorkflowExecutor struct {
-	repo *repository.WorkflowRepository
+}
+
+func ExecuteTask(task models.WorkflowTask) bool {
+	fmt.Printf("Doing task: %s", task.TaskName)
+	fmt.Print(task)
+	return true
 }
 
 func (e *WorkflowExecutor) Execute(workflowExecutionId uuid.UUID) error {
 
-	workflowExecution, err := e.repo.GetWorkflowExecutionById(workflowExecutionId)
+	workflowExecution, err := e.Repo.GetWorkflowExecutionById(workflowExecutionId)
 	if err != nil {
 		return err
 	}
 
 	fmt.Print(workflowExecution)
 
-	workflowDefination, err := e.repo.GetWorkflowDefinitionById(workflowExecution.WorkflowDefinationID)
+	workflowDefination, err := e.Repo.GetWorkflowDefinitionById(workflowExecution.WorkflowDefinationID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Print(workflowDefination.ID)
+	for _, task := range workflowDefination.Tasks {
+		ExecuteTask(task)
+	}
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"workflow-engine/internal/executor"
 	"workflow-engine/internal/models"
 
 	"github.com/google/uuid"
@@ -91,6 +92,10 @@ func (r *WorkflowRepository) CreateWorkflowExecution(ctx context.Context, workfl
 		return uuid.Nil, err
 	}
 
+	executor := executor.WorkflowExecutor{
+		Repo: , 
+	}
+
 	return createdWorkflowExecution.ID, nil
 }
 
@@ -113,4 +118,27 @@ func (r *WorkflowRepository) GetWorkflowDefinitionById(workflowDefinitionId uuid
 		return nil, res.Error
 	}
 	return &workflow, nil
+}
+
+
+func (r *WorkflowRepository) CreateTaskExecutions(ctx context.Context, workflowExecutionId uuid.UUID, tasks []models.WorkflowTask) error {
+
+
+	for idx, task := range tasks {
+
+	if err := r.DB.Create(&models.TaskExecution{
+		WorkflowExecutionID: workflowExecutionId,
+		Status: models.TaskPending,
+		TaskName: task.TaskName,
+		TaskOrder: idx + 1,
+	}).Error; err != nil {
+		return err
+	}
+
+
+
+	}
+
+
+
 }

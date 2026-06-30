@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"workflow-engine/internal/config"
 	"workflow-engine/internal/db"
+	"workflow-engine/internal/executor"
 	"workflow-engine/internal/handlers"
 	"workflow-engine/internal/middlewares"
 	"workflow-engine/internal/repository"
@@ -40,8 +41,12 @@ func Start() {
 		authRouter.POST("/login", userHandler.Login)
 	}
 
+	workflowExecutor := executor.WorkflowExecutor{
+		Repo: repository.NewWorkflowRepository(database),
+	}
+
 	workflowRepository := repository.NewWorkflowRepository(database)
-	workflowService := services.NewWorkflowService(workflowRepository)
+	workflowService := services.NewWorkflowService(workflowRepository, &workflowExecutor)
 	workflowHandler := handlers.NewWorkflowHandler(workflowService)
 
 	workflowRouter := r.Group("/workflows")
@@ -52,7 +57,5 @@ func Start() {
 		workflowRouter.GET("/:workflowId", workflowHandler.GetWorkflow)
 		workflowRouter.POST("/workflow-executions", workflowHandler.CreateWorkflowExecution)
 	}
-
 	r.Run(":" + cfg.Port)
-
 }

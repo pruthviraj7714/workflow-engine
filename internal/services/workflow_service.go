@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"workflow-engine/internal/executor"
 	"workflow-engine/internal/models"
 	"workflow-engine/internal/repository"
 
@@ -11,11 +12,13 @@ import (
 
 type WorkflowService struct {
 	WorkflowRepo *repository.WorkflowRepository
+	Executor     *executor.WorkflowExecutor
 }
 
-func NewWorkflowService(workflowRepo *repository.WorkflowRepository) *WorkflowService {
+func NewWorkflowService(workflowRepo *repository.WorkflowRepository, executor *executor.WorkflowExecutor) *WorkflowService {
 	return &WorkflowService{
 		WorkflowRepo: workflowRepo,
+		Executor:     executor,
 	}
 }
 
@@ -36,5 +39,29 @@ func (s *WorkflowService) ListWorkflows(ctx context.Context) ([]models.WorkflowD
 }
 
 func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, workflowId uuid.UUID) (uuid.UUID, error) {
-	return s.WorkflowRepo.CreateWorkflowExecution(ctx, workflowId)
+
+	//Validate workflow exists
+
+	workflow, err := s.WorkflowRepo.GetWorkflow(ctx, workflowId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// Create workflow execution
+	executionId, err := s.WorkflowRepo.CreateWorkflowExecution(ctx, workflowId)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// Create task executions
+	err = s.WorkflowRepo.CreateWorkflowExecution(ctx, executionId, workflow.Tasks)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	// Start executor
+
+	// Return execution ID
+
+	return executionId, nil
 }
