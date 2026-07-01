@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"time"
-	"workflow-engine/internal/executor"
 	"workflow-engine/internal/models"
 
 	"github.com/google/uuid"
@@ -92,10 +91,6 @@ func (r *WorkflowRepository) CreateWorkflowExecution(ctx context.Context, workfl
 		return uuid.Nil, err
 	}
 
-	executor := executor.WorkflowExecutor{
-		Repo: , 
-	}
-
 	return createdWorkflowExecution.ID, nil
 }
 
@@ -120,25 +115,39 @@ func (r *WorkflowRepository) GetWorkflowDefinitionById(workflowDefinitionId uuid
 	return &workflow, nil
 }
 
-
 func (r *WorkflowRepository) CreateTaskExecutions(ctx context.Context, workflowExecutionId uuid.UUID, tasks []models.WorkflowTask) error {
 
-
-	for idx, task := range tasks {
-
-	if err := r.DB.Create(&models.TaskExecution{
-		WorkflowExecutionID: workflowExecutionId,
-		Status: models.TaskPending,
-		TaskName: task.TaskName,
-		TaskOrder: idx + 1,
-	}).Error; err != nil {
-		return err
-	}
-
-
+	for _, task := range tasks {
+		if err := r.DB.Create(&models.TaskExecution{
+			WorkflowExecutionID: workflowExecutionId,
+			Status:              models.TaskPending,
+			TaskName:            task.TaskName,
+			CurrentTaskOrder:    task.TaskOrder,
+		}).Error; err != nil {
+			return err
+		}
 
 	}
 
+	return nil
+}
 
+func (r *WorkflowRepository) UpdateWorkflowExecutionStatus(ctx context.Context, executionId uuid.UUID, workflowStatus models.WorkflowStatus) error {
 
+	err := r.DB.Model(&models.WorkflowExecution{}).Where("id = ?", executionId).UpdateColumn("status", workflowStatus)
+	if err.Error != nil {
+		return err.Error
+	}
+
+	return nil
+}
+
+func (r *WorkflowRepository) UpdateTaskExecutionStatus(ctx context.Context, taskId uuid.UUID, taskStatus models.TaskStatus) error {
+
+	err := r.DB.Model(&models.TaskExecution{}).Where("id = ?", taskId).UpdateColumn("status", taskStatus)
+	if err.Error != nil {
+		return err.Error
+	}
+
+	return nil
 }

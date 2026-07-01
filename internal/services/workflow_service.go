@@ -41,7 +41,6 @@ func (s *WorkflowService) ListWorkflows(ctx context.Context) ([]models.WorkflowD
 func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, workflowId uuid.UUID) (uuid.UUID, error) {
 
 	//Validate workflow exists
-
 	workflow, err := s.WorkflowRepo.GetWorkflow(ctx, workflowId)
 	if err != nil {
 		return uuid.Nil, err
@@ -54,14 +53,16 @@ func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, workflowI
 	}
 
 	// Create task executions
-	err = s.WorkflowRepo.CreateWorkflowExecution(ctx, executionId, workflow.Tasks)
+	err = s.WorkflowRepo.CreateTaskExecutions(ctx, executionId, workflow.Tasks)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	// Start executor
-
+	err = s.Executor.Execute(executionId)
+	if err != nil {
+		return uuid.Nil, err
+	}
 	// Return execution ID
-
 	return executionId, nil
 }
