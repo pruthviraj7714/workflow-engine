@@ -15,7 +15,7 @@ func Connect(connStr string) (*gorm.DB, error) {
 		log.Fatal(err)
 	}
 
-	db.AutoMigrate(&models.User{}, &models.WorkflowDefinition{}, &models.WorkflowTask{}, &models.WorkflowExecution{})
+	db.AutoMigrate(&models.User{}, &models.WorkflowDefinition{}, &models.WorkflowTask{}, &models.WorkflowExecution{}, &models.TaskExecution{})
 
 	return db, nil
 }

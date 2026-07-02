@@ -75,23 +75,20 @@ func (r *WorkflowRepository) ListWorkflows(ctx context.Context) ([]models.Workfl
 }
 
 func (r *WorkflowRepository) CreateWorkflowExecution(ctx context.Context, workflowId uuid.UUID) (uuid.UUID, error) {
-
-	var createdWorkflowExecution *models.WorkflowExecution
-
 	now := time.Now()
 
-	err := r.DB.WithContext(ctx).Create(&models.WorkflowExecution{
+	res := r.DB.WithContext(ctx).Create(&models.WorkflowExecution{
 		WorkflowDefinationID: workflowId,
 		Status:               models.WorkflowPending,
 		ID:                   uuid.New(),
 		StartedAt:            &now,
-	}).Scan(&createdWorkflowExecution).Error
+	})
 
-	if err != nil {
-		return uuid.Nil, err
+	if res.Error != nil {
+		return uuid.Nil, res.Error
 	}
 
-	return createdWorkflowExecution.ID, nil
+	return res.Statement.ReflectValue.Interface().(models.WorkflowExecution).ID, nil
 }
 
 func (r *WorkflowRepository) GetWorkflowExecutionById(workflowExecutionId uuid.UUID) (*models.WorkflowExecution, error) {

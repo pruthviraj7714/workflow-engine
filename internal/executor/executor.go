@@ -21,8 +21,8 @@ func (e *WorkflowExecutor) ExecuteTask(task models.WorkflowTask) bool {
 		return false
 	}
 
-	fmt.Printf("Doing task: %s", task.TaskName)
-	fmt.Print(task)
+	fmt.Printf("Doing task: %s\n", task.TaskName)
+	fmt.Println(task)
 	return true
 }
 
