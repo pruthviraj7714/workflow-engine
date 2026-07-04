@@ -59,7 +59,7 @@ func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, workflowI
 	}
 
 	// Start executor
-	err = s.Executor.Execute(executionId)
+	err = s.Executor.Execute(ctx, executionId)
 	if err != nil {
 		return uuid.Nil, err
 	}
