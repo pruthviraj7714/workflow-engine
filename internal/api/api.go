@@ -11,6 +11,7 @@ import (
 	"workflow-engine/internal/repository"
 	"workflow-engine/internal/services"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,6 +25,8 @@ func Start() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	r.Use(cors.Default())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

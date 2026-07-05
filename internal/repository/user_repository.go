@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"workflow-engine/internal/models"
-	"workflow-engine/internal/utils"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -19,58 +19,37 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) RegisterUser(ctx context.Context, username, password string) (string, error) {
-	var user models.User
-
-	res := r.DB.WithContext(ctx).Model(&models.User{}).Where("username = ?", username).First(&user)
-
-	if res.Error == nil {
-		return "", errors.New("username already exists")
+func (r *UserRepository) CreateUser(ctx context.Context, username, password string) (uuid.UUID, error) {
+	user := models.User{
+		Username: username,
+		Password: password,
 	}
 
-	if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return "", res.Error
-	}
-
-	hashedPassword, err := utils.HashPassword(password)
+	err := r.DB.WithContext(ctx).Create(&user).Error
 
 	if err != nil {
-		return "", err
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return uuid.Nil, errors.New("user name already exists")
+		} else {
+			return uuid.Nil, err
+		}
 	}
 
-	res = r.DB.WithContext(ctx).Create(&models.User{
-		Username: username,
-		Password: hashedPassword,
-	})
-
-	if res.Error != nil {
-		return "", res.Error
-	}
-
-	return r.LoginUser(ctx, username, password)
-
+	return user.ID, nil
 }
 
-func (r *UserRepository) LoginUser(ctx context.Context, username, password string) (string, error) {
-	var existingUser models.User
+func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	var user models.User
 
-	res := r.DB.WithContext(ctx).Where("username = ?", username).First(&existingUser)
+	res := r.DB.WithContext(ctx).Where("username = ?", username).First(&user)
 
-	if res.RowsAffected == 0 {
-		return "", errors.New("User with given username not found")
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user with given username not found")
+		}
+		return nil, res.Error
 	}
 
-	isValid := utils.CheckPasswordHash(password, existingUser.Password)
+	return &user, nil
 
-	if !isValid {
-		return "", errors.New("Incorrect Password")
-	}
-
-	token, err := utils.GenerateToken(existingUser.ID)
-
-	if err != nil {
-		return "", err
-	}
-
-	return token, err
 }
