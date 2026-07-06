@@ -11,6 +11,7 @@ type WorkflowDefinition struct {
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	UserID    uuid.UUID `json:"user_id"`
 
 	Tasks      []WorkflowTask      `json:"tasks" gorm:"foreignKey:WorkflowDefinationID;constraint:OnDelete:CASCADE"`
 	Executions []WorkflowExecution `json:"executions" gorm:"foreignKey:WorkflowDefinationID;constraint:OnDelete:CASCADE"`

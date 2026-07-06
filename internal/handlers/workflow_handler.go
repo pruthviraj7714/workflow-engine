@@ -19,6 +19,23 @@ func NewWorkflowHandler(workflowService *services.WorkflowService) *WorkflowHand
 }
 
 func (h *WorkflowHandler) CreateWorkflow(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	parsedUUID, ok := userId.(uuid.UUID)
+
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid user_id type",
+		})
+		return
+	}
 
 	var req struct {
 		WorkflowName string   `json:"workflowName"`
@@ -26,45 +43,101 @@ func (h *WorkflowHandler) CreateWorkflow(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if workflowId, err := h.WorkflowService.CreateWorkflow(c.Request.Context(), req.WorkflowName, req.Tasks); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+	workflowId, err := h.WorkflowService.CreateWorkflow(c.Request.Context(), parsedUUID, req.WorkflowName, req.Tasks)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	} else {
-		c.JSON(200, gin.H{"workflowId": workflowId})
 	}
+
+	c.JSON(http.StatusOK, gin.H{"workflowId": workflowId})
 }
 
 func (h *WorkflowHandler) GetWorkflow(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	parsedUUID, ok := userId.(uuid.UUID)
+
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid user_id type",
+		})
+		return
+	}
+
 	workflowId := c.Param("workflowId")
 
 	uuid, err := uuid.Parse(workflowId)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if workflow, err := h.WorkflowService.GetWorkflow(c.Request.Context(), uuid); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+	workflow, err := h.WorkflowService.GetWorkflow(c.Request.Context(), parsedUUID, uuid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	} else {
-		c.JSON(200, workflow)
 	}
+
+	c.JSON(http.StatusOK, workflow)
 }
 
 func (h *WorkflowHandler) ListWorkflows(c *gin.Context) {
-	if workflows, err := h.WorkflowService.ListWorkflows(c.Request.Context()); err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+	userId, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	parsedUUID, ok := userId.(uuid.UUID)
+
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid user_id type",
+		})
+		return
+	}
+
+	if workflows, err := h.WorkflowService.ListWorkflows(c.Request.Context(), parsedUUID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	} else {
-		c.JSON(200, workflows)
+		c.JSON(http.StatusOK, workflows)
 	}
 }
 
 func (h *WorkflowHandler) CreateWorkflowExecution(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "unauthorized",
+		})
+		return
+	}
+
+	parsedUUID, ok := userId.(uuid.UUID)
+
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "invalid user_id type",
+		})
+		return
+	}
 	var req struct {
 		WorkflowID string `json:"workflowId"`
 	}
@@ -87,7 +160,7 @@ func (h *WorkflowHandler) CreateWorkflowExecution(c *gin.Context) {
 		return
 	}
 
-	workflowExecutionId, err := h.WorkflowService.CreateWorkflowExecution(c.Request.Context(), workflowId)
+	workflowExecutionId, err := h.WorkflowService.CreateWorkflowExecution(c.Request.Context(), parsedUUID, workflowId)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

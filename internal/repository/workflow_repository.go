@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 	"workflow-engine/internal/models"
 
@@ -20,9 +19,10 @@ func NewWorkflowRepository(db *gorm.DB) *WorkflowRepository {
 	}
 }
 
-func (r *WorkflowRepository) CreateWorkflowDefinition(ctx context.Context, workflowName string, tasks []string) (uuid.UUID, error) {
+func (r *WorkflowRepository) CreateWorkflowDefinition(ctx context.Context, workflowName string, tasks []string, userId uuid.UUID) (uuid.UUID, error) {
 	workflowDefination := &models.WorkflowDefinition{
-		Name: workflowName,
+		Name:   workflowName,
+		UserID: userId,
 	}
 
 	err := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -30,8 +30,6 @@ func (r *WorkflowRepository) CreateWorkflowDefinition(ctx context.Context, workf
 		if err := tx.Create(&workflowDefination).Error; err != nil {
 			return err
 		}
-
-		fmt.Print(workflowDefination)
 
 		for idx, taskName := range tasks {
 			if err := tx.Create(&models.WorkflowTask{
@@ -53,19 +51,19 @@ func (r *WorkflowRepository) CreateWorkflowDefinition(ctx context.Context, workf
 	return workflowDefination.ID, nil
 }
 
-func (r *WorkflowRepository) GetWorkflow(ctx context.Context, workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
+func (r *WorkflowRepository) GetWorkflow(ctx context.Context, userId uuid.UUID, workflowId uuid.UUID) (*models.WorkflowDefinition, error) {
 	var workflow models.WorkflowDefinition
-	res := r.DB.WithContext(ctx).Preload("Tasks").First(&workflow, workflowId)
+	res := r.DB.WithContext(ctx).Where("user_id = ?", userId).Preload("Tasks").First(&workflow, workflowId)
 	if res.Error != nil {
 		return nil, res.Error
 	}
 	return &workflow, nil
 }
 
-func (r *WorkflowRepository) ListWorkflows(ctx context.Context) ([]models.WorkflowDefinition, error) {
+func (r *WorkflowRepository) ListWorkflows(ctx context.Context, userId uuid.UUID) ([]models.WorkflowDefinition, error) {
 	var workflows []models.WorkflowDefinition
 
-	res := r.DB.WithContext(ctx).Preload("Tasks").Find(&workflows)
+	res := r.DB.WithContext(ctx).Where("user_id = ?", userId).Preload("Tasks").Find(&workflows)
 
 	if res.Error != nil {
 		return nil, res.Error
@@ -77,18 +75,20 @@ func (r *WorkflowRepository) ListWorkflows(ctx context.Context) ([]models.Workfl
 func (r *WorkflowRepository) CreateWorkflowExecution(ctx context.Context, workflowId uuid.UUID) (uuid.UUID, error) {
 	now := time.Now()
 
-	res := r.DB.WithContext(ctx).Create(&models.WorkflowExecution{
+	workflowExecution := &models.WorkflowExecution{
 		WorkflowDefinationID: workflowId,
 		Status:               models.WorkflowPending,
 		ID:                   uuid.New(),
 		StartedAt:            &now,
-	})
+	}
+
+	res := r.DB.WithContext(ctx).Create(workflowExecution)
 
 	if res.Error != nil {
 		return uuid.Nil, res.Error
 	}
 
-	return res.Statement.ReflectValue.Interface().(models.WorkflowExecution).ID, nil
+	return workflowExecution.ID, nil
 }
 
 func (r *WorkflowRepository) GetWorkflowExecutionById(workflowExecutionId uuid.UUID) (*models.WorkflowExecution, error) {
