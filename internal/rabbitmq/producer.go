@@ -5,50 +5,33 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 )
 
-func main() {
-	conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
-	}
-	defer conn.Close()
+type Producer struct {
+	MQ *RabbitMQ
+}
 
-	// 2. Open a unique channel
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open a channel: %v", err)
+func NewProducer(mq *RabbitMQ) *Producer {
+	return &Producer{
+		MQ: mq,
 	}
-	defer ch.Close()
+}
 
-	// 3. Declare a queue to send to
-	q, err := ch.QueueDeclare(
-		"task_queue", // Queue name
-		true,         // Durable (survives server restarts)
-		false,        // Delete when unused
-		false,        // Exclusive
-		false,        // No-wait
-		nil,          // Arguments
-	)
-	if err != nil {
-		log.Fatalf("Failed to declare a queue: %v", err)
-	}
-
-	// 4. Define context timeout for publishing
+func (p *Producer) PublishWorkflowExecution(executionID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	body := "Hello World from Go!"
+	body := executionID.String()
 
-	// 5. Publish the message to the default exchange
-	err = ch.PublishWithContext(ctx,
-		"",     // Exchange name (empty string uses default direct exchange)
-		q.Name, // Routing key (queue name)
-		false,  // Mandatory
-		false,  // Immediate
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent, // Make message persistent
+	err := p.MQ.Channel.PublishWithContext(ctx,
+		"",                     // Exchange name (empty string uses default direct exchange)
+		WorkflowExecutionQueue, // Routing key (queue name)
+		false,                  // Mandatory
+		false,                  // Immediate
+		amqp091.Publishing{
+			DeliveryMode: amqp091.Persistent, // Make message persistent
 			ContentType:  "text/plain",
 			Body:         []byte(body),
 		},
@@ -58,4 +41,5 @@ func main() {
 	}
 
 	log.Printf(" [x] Sent %s", body)
+	return nil
 }

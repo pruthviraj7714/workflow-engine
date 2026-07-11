@@ -3,8 +3,8 @@ package services
 import (
 	"context"
 	"errors"
-	"workflow-engine/internal/executor"
 	"workflow-engine/internal/models"
+	"workflow-engine/internal/rabbitmq"
 	"workflow-engine/internal/repository"
 
 	"github.com/google/uuid"
@@ -12,13 +12,13 @@ import (
 
 type WorkflowService struct {
 	WorkflowRepo *repository.WorkflowRepository
-	Executor     *executor.WorkflowExecutor
+	Producer     *rabbitmq.Producer
 }
 
-func NewWorkflowService(workflowRepo *repository.WorkflowRepository, executor *executor.WorkflowExecutor) *WorkflowService {
+func NewWorkflowService(workflowRepo *repository.WorkflowRepository, producer *rabbitmq.Producer) *WorkflowService {
 	return &WorkflowService{
 		WorkflowRepo: workflowRepo,
-		Executor:     executor,
+		Producer:     producer,
 	}
 }
 
@@ -59,7 +59,7 @@ func (s *WorkflowService) CreateWorkflowExecution(ctx context.Context, userId uu
 	}
 
 	// Start executor
-	err = s.Executor.Execute(ctx, executionId)
+	err = s.Producer.PublishWorkflowExecution(executionId)
 	if err != nil {
 		return uuid.Nil, err
 	}

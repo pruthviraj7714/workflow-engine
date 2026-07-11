@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Port  string
-	DBURL string
+	Port        string
+	DBURL       string
+	RabbitMQURL string
 }
 
 func getEnv(key, fallback string) string {
@@ -26,7 +27,8 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		Port:  getEnv("PORT", "8080"),
-		DBURL: getEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432"),
+		Port:        getEnv("PORT", "8080"),
+		DBURL:       getEnv("DATABASE_URL", "postgresql://postgres:password@localhost:5432"),
+		RabbitMQURL: getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 	}
 }

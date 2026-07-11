@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"workflow-engine/internal/config"
 	"workflow-engine/internal/db"
-	"workflow-engine/internal/executor"
 	"workflow-engine/internal/handlers"
 	"workflow-engine/internal/middlewares"
+	"workflow-engine/internal/rabbitmq"
 	"workflow-engine/internal/repository"
 	"workflow-engine/internal/services"
 
@@ -25,6 +25,14 @@ func Start() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	mq, err := rabbitmq.NewRabbitMQ(cfg.RabbitMQURL)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	producer := rabbitmq.NewProducer(mq)
 
 	r.Use(cors.Default())
 
@@ -44,12 +52,8 @@ func Start() {
 		authRouter.POST("/login", userHandler.Login)
 	}
 
-	workflowExecutor := executor.WorkflowExecutor{
-		Repo: repository.NewWorkflowRepository(database),
-	}
-
 	workflowRepository := repository.NewWorkflowRepository(database)
-	workflowService := services.NewWorkflowService(workflowRepository, &workflowExecutor)
+	workflowService := services.NewWorkflowService(workflowRepository, producer)
 	workflowHandler := handlers.NewWorkflowHandler(workflowService)
 
 	workflowRouter := r.Group("/workflows")
