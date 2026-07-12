@@ -39,10 +39,18 @@ func NewRabbitMQ(url string) (*RabbitMQ, error) {
 	}, nil
 }
 
-func (r *RabbitMQ) Close() {
-	defer func() {
-		r.Conn.Close()
+func (r *RabbitMQ) Close() error {
+	if r.Channel != nil {
+		if err := r.Channel.Close(); err != nil {
+			return err
+		}
+	}
 
-		r.Channel.Close()
-	}()
+	if r.Conn != nil {
+		if err := r.Conn.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

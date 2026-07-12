@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"context"
 	"log"
 
 	"github.com/google/uuid"
@@ -16,8 +17,9 @@ func NewConsumer(mq *RabbitMQ) *Consumer {
 	}
 }
 
-func (c *Consumer) Start(handler func(uuid.UUID) error) error {
-	msgs, err := c.MQ.Channel.Consume(
+func (c *Consumer) Start(ctx context.Context, handler func(context.Context, uuid.UUID) error) error {
+	msgs, err := c.MQ.Channel.ConsumeWithContext(
+		ctx,
 		WorkflowExecutionQueue, // Queue name
 		"",                     // Consumer identifier (empty auto-generates one)
 		true,                   // Auto-Ack (true automatically acknowledges message receipt)
@@ -35,7 +37,19 @@ func (c *Consumer) Start(handler func(uuid.UUID) error) error {
 
 	go func() {
 		for d := range msgs {
-			log.Printf(" [x] Received a message: %s", d.Body)
+
+			executionID, err := uuid.Parse(string(d.Body))
+
+			if err != nil {
+				log.Printf("invalid UUID: %v", err)
+				continue
+			}
+
+			if err := handler(ctx, executionID); err != nil {
+				log.Printf("handler error: %v", err)
+			}
+
+			log.Printf(" [x] successfully executed execution with id : %s", d.Body)
 		}
 	}()
 

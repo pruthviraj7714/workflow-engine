@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"workflow-engine/internal/config"
 	"workflow-engine/internal/db"
+	"workflow-engine/internal/executor"
 	"workflow-engine/internal/handlers"
 	"workflow-engine/internal/middlewares"
 	"workflow-engine/internal/rabbitmq"
@@ -32,7 +34,14 @@ func Start() {
 		log.Fatal(err)
 	}
 
+	defer func() {
+		if err := mq.Close(); err != nil {
+			log.Println("failed to close RabbitMQ:", err)
+		}
+	}()
+
 	producer := rabbitmq.NewProducer(mq)
+	consumer := rabbitmq.NewConsumer(mq)
 
 	r.Use(cors.Default())
 
@@ -55,6 +64,12 @@ func Start() {
 	workflowRepository := repository.NewWorkflowRepository(database)
 	workflowService := services.NewWorkflowService(workflowRepository, producer)
 	workflowHandler := handlers.NewWorkflowHandler(workflowService)
+
+	executor := executor.WorkflowExecutor{
+		Repo: workflowRepository,
+	}
+
+	go consumer.Start(context.Background(), executor.Execute)
 
 	workflowRouter := r.Group("/workflows")
 	{
